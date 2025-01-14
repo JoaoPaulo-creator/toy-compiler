@@ -82,3 +82,81 @@ func (l *Lexer) readNumber() string {
 }
 
 func (l *Lexer) readString() string {
+	position := l.position + 1 // skip opening quote
+	for {
+		l.readChar()
+		if l.character == '"' || l.character == 0 {
+			break
+		}
+	}
+	str := l.input[position:l.position]
+	l.readChar() // skip closing quote
+	return str
+}
+
+func (l *Lexer) NextToken() token.Token {
+	var tok token.Token
+
+	l.skipWhitespace()
+
+	tok.Line = l.line
+	tok.Column = l.column
+
+	switch l.character {
+	case '"':
+		tok.Type = token.STRING
+		tok.Literal = l.readString()
+	case '=':
+		tok.Type = token.ASSIGN
+		tok.Literal = string(l.character)
+	case '+':
+		tok.Type = token.PLUS
+		tok.Literal = string(l.character)
+	case '-':
+		tok.Type = token.MINUS
+		tok.Literal = string(l.character)
+	case '*':
+		tok.Type = token.ASTERISK
+		tok.Literal = string(l.character)
+	case '/':
+		tok.Type = token.SLASH
+		tok.Literal = string(l.character)
+	case '(':
+		tok.Type = token.LPAREN
+		tok.Literal = string(l.character)
+	case ')':
+		tok.Type = token.RPAREN
+		tok.Literal = string(l.character)
+	case '{':
+		tok.Type = token.LBRACE
+		tok.Literal = string(l.character)
+	case '}':
+		tok.Type = token.RBRACE
+		tok.Literal = string(l.character)
+	case ',':
+		tok.Type = token.COMMA
+		tok.Literal = string(l.character)
+	case ';':
+		tok.Type = token.SEMICOLON
+		tok.Literal = string(l.character)
+	case 0:
+		tok.Type = token.EOF
+		tok.Literal = ""
+	default:
+		if unicode.IsLetter(l.character) {
+			tok.Literal = l.readIdentifier()
+			tok.Type = token.LookupIdentifier(tok.Literal)
+			return tok
+		} else if unicode.IsDigit(l.character) {
+			tok.Type = token.INT
+			tok.Literal = l.readNumber()
+			return tok
+		} else {
+			tok.Type = token.ILLEGAL
+			tok.Literal = string(l.character)
+		}
+	}
+
+	l.readChar()
+	return tok
+}
